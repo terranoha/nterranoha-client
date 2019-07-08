@@ -125,7 +125,7 @@ namespace Nterranoha.Execution
             stringBuilder.Append("TimeStamps:\r\n");
             stringBuilder.Append("Time in:").Append(TimeIn.ToString("h:m:s.fff")).Append("\r\n");
             stringBuilder.Append("Time out:").Append(TimeOut.ToString("h:m:s.fff")).Append("\r\n");
-            stringBuilder.Append("Broker receipt in:").Append(BrokerReceipt.ToString("h:m:s.fff")).Append("\r\n");
+            stringBuilder.Append("Broker receipt:").Append(BrokerReceipt.ToString("h:m:s.fff")).Append("\r\n");
             stringBuilder.Append("Broker exec:").Append(BrokerExec.ToString("h:m:s.fff")).Append("\r\n");
 
 

@@ -15,7 +15,7 @@ namespace Nterranoha.Execution
         // This variable is a kludge for developer test purposes.  Don't do this on a production application.
         public IInitiator MyInitiator = null;
 
-        private Dictionary<string, DateTime> _orderHash = new Dictionary<string, DateTime>();
+        private Dictionary<string, DateTime> _orderClientTimestamp = new Dictionary<string, DateTime>();
         private string _logonName = default(string);
         private string _logonPassword = default(string);
         public TradingApp() : base()
@@ -85,6 +85,8 @@ namespace Nterranoha.Execution
 
         public void OnMessage(QuickFix.FIX44.ExecutionReport m, SessionID s)
         {
+            var utcNow = DateTime.UtcNow;
+
             var stringBuilder = new StringBuilder("***Execution report***:\r\n");
             stringBuilder.Append("================\r\n");
             for (int i = 1; i <= m.GetInt(QuickFix.Fields.Tags.NoContraBrokers); i++)
@@ -121,19 +123,25 @@ namespace Nterranoha.Execution
                         break;
                 }
             }
+            var clientSentDate = this._orderClientTimestamp[m.ClOrdID.getValue()];
 
+            
             stringBuilder.Append("TimeStamps:\r\n");
+            stringBuilder.Append("Customer sent:").Append(clientSentDate.ToString("h:m:s.fff")).Append("\r\n");
             stringBuilder.Append("Time in:").Append(TimeIn.ToString("h:m:s.fff")).Append("\r\n");
-            stringBuilder.Append("Time out:").Append(TimeOut.ToString("h:m:s.fff")).Append("\r\n");
             stringBuilder.Append("Broker receipt:").Append(BrokerReceipt.ToString("h:m:s.fff")).Append("\r\n");
             stringBuilder.Append("Broker exec:").Append(BrokerExec.ToString("h:m:s.fff")).Append("\r\n");
+            stringBuilder.Append("Time out:").Append(TimeOut.ToString("h:m:s.fff")).Append("\r\n");
+            stringBuilder.Append("Customer exec:").Append(utcNow.ToString("h:m:s.fff")).Append("\r\n");
 
 
-            stringBuilder.Append("Customer  |  IdsRoot   |  LP\r\n").Append("\r\n");
-            stringBuilder.Append("          |-> Time in  |\r\n").Append("\r\n");
-            stringBuilder.Append("          |            |-> Broker Receipt\r\n").Append("\r\n");
-            stringBuilder.Append("          |            |<- Broker exec\r\n").Append("\r\n");
-            stringBuilder.Append("          |<- Time out |\r\n").Append("\r\n");
+            stringBuilder.Append("Customer       |  IdsRoot   |  LP\r\n").Append("\r\n");
+            stringBuilder.Append("Customer sent->|            |\r\n").Append("\r\n");
+            stringBuilder.Append("               |-> Time in  |\r\n").Append("\r\n");
+            stringBuilder.Append("               |            |-> Broker Receipt\r\n").Append("\r\n");
+            stringBuilder.Append("               |            |<- Broker exec\r\n").Append("\r\n");
+            stringBuilder.Append("               |<- Time out |\r\n").Append("\r\n");
+            stringBuilder.Append("Customer exec<-|            |\r\n").Append("\r\n");
             Console.WriteLine(stringBuilder.ToString());
         }
 
@@ -221,7 +229,7 @@ namespace Nterranoha.Execution
             {
                 m.Header.GetField(Tags.BeginString);
                 var transactTime = DateTime.UtcNow;
-                this._orderHash.Add(m.ClOrdID.getValue(), transactTime);
+                this._orderClientTimestamp.Add(m.ClOrdID.getValue(), transactTime);
                 m.TransactTime = new TransactTime(transactTime);
                 SendMessage( m , ".OD");
             }
